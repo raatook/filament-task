@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\TaskStatus;
 use App\Models\User;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -24,19 +25,15 @@ class AllUsersActivityTable extends BaseWidget
                     ->where('role', 'user')
                     ->withCount([
                         'tasks',
-                        'tasks as completed_tasks_count' => function ($query) {
-                            $query->where('status', 'done');
-                        },
-                        'tasks as in_progress_tasks_count' => function ($query) {
-                            $query->where('status', 'in_progress');
-                        },
-                        'tasks as pending_tasks_count' => function ($query) {
-                            $query->where('status', 'pending');
-                        },
-                        'tasks as overdue_tasks_count' => function ($query) {
-                            $query->where('status', '!=', 'done')
-                                ->where('due_date', '<', now());
-                        },
+                        'tasks as completed_tasks_count' => fn ($query) =>
+                            $query->where('status', TaskStatus::DONE),
+                        'tasks as in_progress_tasks_count' => fn ($query) =>
+                            $query->where('status', TaskStatus::IN_PROGRESS),
+                        'tasks as pending_tasks_count' => fn ($query) =>
+                            $query->where('status', TaskStatus::PENDING),
+                        'tasks as overdue_tasks_count' => fn ($query) =>
+                            $query->where('status', '!=', TaskStatus::DONE)
+                                ->where('due_date', '<', now()),
                     ])
             )
             ->columns([

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Models\Task;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -54,49 +56,22 @@ class RecentTasksWidget extends BaseWidget
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => __('Pending'),
-                        'in_progress' => __('In Progress'),
-                        'done' => __('Done'),
-                        default => $state,
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'in_progress' => 'info',
-                        'done' => 'success',
-                        default => 'gray',
-                    }),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color()),
 
                 TextColumn::make('priority')
                     ->label(__('Priority'))
                     ->badge()
-                    ->formatStateUsing(fn (int $state): string => match ($state) {
-                        1 => __('Low'),
-                        2 => __('Medium'),
-                        3 => __('High'),
-                        4 => __('Urgent'),
-                        5 => __('Critical'),
-                        default => (string) $state,
-                    })
-                    ->color(fn (int $state): string => match ($state) {
-                        1, 2 => 'success',
-                        3 => 'warning',
-                        4, 5 => 'danger',
-                        default => 'gray',
-                    })
-                    ->icon(fn (int $state): string => match ($state) {
-                        4, 5 => 'heroicon-o-arrow-up',
-                        3 => 'heroicon-o-minus',
-                        1, 2 => 'heroicon-o-arrow-down',
-                        default => 'heroicon-o-minus',
-                    }),
+                    ->formatStateUsing(fn ($state) => $state->label())
+                    ->color(fn ($state) => $state->color())
+                    ->icon(fn ($state) => $state->icon()),
 
                 TextColumn::make('due_date')
                     ->label(__('Due Date'))
                     ->date()
                     ->sortable()
-                    ->color(fn ($record) => $record->due_date && $record->due_date->isPast() ? 'danger' : 'gray')
-                    ->icon(fn ($record) => $record->due_date && $record->due_date->isPast() ? 'heroicon-o-exclamation-triangle' : null)
+                    ->color(fn ($record) => $record->isOverdue() ? 'danger' : 'gray')
+                    ->icon(fn ($record) => $record->isOverdue() ? 'heroicon-o-exclamation-triangle' : null)
                     ->description(fn ($record) => $record->due_date ? $record->due_date->diffForHumans() : null),
 
                 TextColumn::make('user.name')

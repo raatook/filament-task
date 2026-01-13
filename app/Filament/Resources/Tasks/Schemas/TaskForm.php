@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Tasks\Schemas;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -57,25 +59,15 @@ class TaskForm
 
                 Select::make('status')
                     ->label(__('Status'))
-                    ->options([
-                        'pending' => __('Pending'),
-                        'in_progress' => __('In Progress'),
-                        'done' => __('Done'),
-                    ])
-                    ->default('pending')
+                    ->options(TaskStatus::options())
+                    ->default(TaskStatus::PENDING->value)
                     ->required()
                     ->native(false),
 
                 Select::make('priority')
                     ->label(__('Priority'))
-                    ->options([
-                        1 => '1 - '.__('Low'),
-                        2 => '2 - '.__('Medium'),
-                        3 => '3 - '.__('High'),
-                        4 => '4 - '.__('Urgent'),
-                        5 => '5 - '.__('Critical'),
-                    ])
-                    ->default(1)
+                    ->options(TaskPriority::options())
+                    ->default(TaskPriority::LOW->value)
                     ->required()
                     ->native(false),
 

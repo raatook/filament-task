@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Enums\UserRole;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -30,12 +31,9 @@ class UserForm
 
                         Select::make('role')
                             ->label(__('Role'))
-                            ->options([
-                                'user' => __('User'),
-                                'admin' => __('Admin'),
-                            ])
+                            ->options(UserRole::options())
                             ->required()
-                            ->default('user')
+                            ->default(UserRole::USER->value)
                             ->native(false),
 
                         Select::make('language')
@@ -51,7 +49,7 @@ class UserForm
                         TextInput::make('password')
                             ->label(__('Password'))
                             ->password()
-                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                            ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
                             ->maxLength(255)

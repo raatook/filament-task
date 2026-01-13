@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Tasks\Pages;
 
+use App\Actions\Task\CreateTaskAction;
 use App\Filament\Resources\Tasks\TaskResource;
-use App\Models\Project;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateTask extends CreateRecord
@@ -16,15 +16,12 @@ class CreateTask extends CreateRecord
             $data['user_id'] = auth()->id();
         }
 
-        if (auth()->user()->isAdmin() && isset($data['user_id']) && isset($data['project_id'])) {
-            $project = Project::withoutGlobalScopes()->find($data['project_id']);
-            $userId = $data['user_id'];
-
-            if ($project && ! $project->users()->where('users.id', $userId)->exists()) {
-                $project->users()->attach($userId);
-            }
-        }
-
         return $data;
+    }
+
+    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+    {
+        $createTaskAction = app(CreateTaskAction::class);
+        return $createTaskAction->execute($data);
     }
 }

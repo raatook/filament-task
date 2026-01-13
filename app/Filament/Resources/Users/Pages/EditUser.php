@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Actions\User\UpdateUserAction;
 use App\Filament\Resources\Users\UserResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -18,5 +19,13 @@ class EditUser extends EditRecord
             Actions\DeleteAction::make()
                 ->visible(fn () => $this->record->id !== auth()->id()),
         ];
+    }
+
+    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    {
+        $updateUserAction = app(UpdateUserAction::class);
+        $updateUserAction->execute($record->id, $data);
+
+        return $record->fresh();
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Project;
-use App\Models\Task;
+use App\Services\ProjectService;
+use App\Services\TaskStatisticsService;
 use Filament\Widgets\StatsOverviewWidget as BaseStatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -13,27 +13,25 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
 
     protected function getStats(): array
     {
+        $statisticsService = app(TaskStatisticsService::class);
+        $projectService = app(ProjectService::class);
+
         $user = auth()->user();
         $isAdmin = $user->isAdmin();
 
-        $totalTasks = $isAdmin ? Task::withoutGlobalScopes()->count() : Task::count();
-        $completedTasks = $isAdmin
-            ? Task::withoutGlobalScopes()->where('status', 'done')->count()
-            : Task::where('status', 'done')->count();
-        $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
+        $userId = $isAdmin ? null : $user->id;
+        $completionRate = $statisticsService->getCompletionRate($userId);
+        $stats = $isAdmin
+            ? $statisticsService->getGlobalStatistics()
+            : $statisticsService->getUserStatistics($user->id);
 
-        $tasksThisMonth = $isAdmin
-            ? Task::withoutGlobalScopes()->whereMonth('created_at', now()->month)->count()
-            : Task::whereMonth('created_at', now()->month)->count();
-        $tasksLastMonth = $isAdmin
-            ? Task::withoutGlobalScopes()->whereMonth('created_at', now()->subMonth()->month)->count()
-            : Task::whereMonth('created_at', now()->subMonth()->month)->count();
-        $taskChange = $tasksLastMonth > 0 ? round((($tasksThisMonth - $tasksLastMonth) / $tasksLastMonth) * 100, 1) : 0;
+        $projectCount = $isAdmin
+            ? $projectService->getAllProjects()->count()
+            : $projectService->getUserProjects($user->id)->count();
 
-        $projectCount = $isAdmin ? Project::withoutGlobalScopes()->count() : Project::count();
-        $pendingTasks = $isAdmin
-            ? Task::withoutGlobalScopes()->where('status', 'pending')->count()
-            : Task::where('status', 'pending')->count();
+        $trend = $statisticsService->getMonthlyTaskTrend();
+        $totalTasks = $stats['total'] ?? ($stats['pending'] + $stats['in_progress'] + $stats['done']);
+        $completedTasks = $stats['done'];
 
         return [
             Stat::make(__('Total Projects'), $projectCount)
@@ -47,12 +45,20 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
                 ->color('success')
                 ->chart([30, 45, 60, 55, 70, 65, 75, $completionRate]),
 
-            Stat::make(__('Tasks This Month'), $tasksThisMonth)
-                ->description($taskChange >= 0 ? "{$taskChange}% ".__('increase') : "{$taskChange}% ".__('decrease'))
-                ->descriptionIcon($taskChange >= 0 ? 'heroicon-o-arrow-trending-up' : 'heroicon-o-arrow-trending-down')
-                ->color($taskChange >= 0 ? 'success' : 'danger'),
+            Stat::make(__('Tasks This Month'), $trend['this_month'])
+                ->description(
+                    $trend['change_percent'] >= 0
+                        ? "{$trend['change_percent']}% ".__('increase')
+                        : abs($trend['change_percent'])."% ".__('decrease')
+                )
+                ->descriptionIcon(
+                    $trend['change_percent'] >= 0
+                        ? 'heroicon-o-arrow-trending-up'
+                        : 'heroicon-o-arrow-trending-down'
+                )
+                ->color($trend['change_percent'] >= 0 ? 'success' : 'danger'),
 
-            Stat::make(__('Pending Tasks'), $pendingTasks)
+            Stat::make(__('Pending Tasks'), $stats['pending'])
                 ->description(__('Waiting to start'))
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('warning'),

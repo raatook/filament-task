@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -32,15 +33,8 @@ class UsersTable
                 TextColumn::make('role')
                     ->label(__('Role'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'admin' => 'danger',
-                        'user' => 'primary',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'admin' => __('Admin'),
-                        'user' => __('User'),
-                        default => $state,
-                    })
+                    ->color(fn ($state) => $state->color())
+                    ->formatStateUsing(fn ($state) => $state->label())
                     ->sortable(),
 
                 TextColumn::make('language')
@@ -74,10 +68,7 @@ class UsersTable
             ->filters([
                 SelectFilter::make('role')
                     ->label(__('Role'))
-                    ->options([
-                        'admin' => __('Admin'),
-                        'user' => __('User'),
-                    ]),
+                    ->options(UserRole::options()),
                 SelectFilter::make('language')
                     ->label(__('Language'))
                     ->options([

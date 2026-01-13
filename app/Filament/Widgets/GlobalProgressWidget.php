@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Task;
+use App\Services\TaskStatisticsService;
 use Filament\Widgets\ChartWidget;
 
 class GlobalProgressWidget extends ChartWidget
@@ -16,21 +16,14 @@ class GlobalProgressWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $statusCounts = Task::withoutGlobalScopes()
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
-
-        $pending = $statusCounts['pending'] ?? 0;
-        $inProgress = $statusCounts['in_progress'] ?? 0;
-        $done = $statusCounts['done'] ?? 0;
+        $statisticsService = app(TaskStatisticsService::class);
+        $stats = $statisticsService->getGlobalStatistics();
 
         return [
             'datasets' => [
                 [
                     'label' => __('Tasks by Status'),
-                    'data' => [$pending, $inProgress, $done],
+                    'data' => [$stats['pending'], $stats['in_progress'], $stats['done']],
                     'backgroundColor' => [
                         'rgb(156, 163, 175)',
                         'rgb(251, 191, 36)',
@@ -39,9 +32,9 @@ class GlobalProgressWidget extends ChartWidget
                 ],
             ],
             'labels' => [
-                __('Pending').' ('.$pending.')',
-                __('In Progress').' ('.$inProgress.')',
-                __('Done').' ('.$done.')',
+                __('Pending').' ('.$stats['pending'].')',
+                __('In Progress').' ('.$stats['in_progress'].')',
+                __('Done').' ('.$stats['done'].')',
             ],
         ];
     }

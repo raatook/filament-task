@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\User;
+use App\Services\TaskStatisticsService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -12,36 +12,16 @@ class UserProductivityWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $users = User::where('role', 'user')
-            ->withCount([
-                'tasks',
-                'tasks as completed_tasks_count' => function ($query) {
-                    $query->where('status', 'done');
-                },
-                'tasks as in_progress_tasks_count' => function ($query) {
-                    $query->where('status', 'in_progress');
-                },
-            ])
-            ->get()
-            ->map(function ($user) {
-                $completionRate = $user->tasks_count > 0
-                    ? round(($user->completed_tasks_count / $user->tasks_count) * 100, 1)
-                    : 0;
+        $statisticsService = app(TaskStatisticsService::class);
 
-                return [
-                    'name' => $user->name,
-                    'total_tasks' => $user->tasks_count,
-                    'completed' => $user->completed_tasks_count,
-                    'in_progress' => $user->in_progress_tasks_count,
-                    'completion_rate' => $completionRate,
-                ];
-            })
+        $usersData = $statisticsService->getAllUsersProductivity()
             ->sortByDesc('total_tasks')
-            ->take(3);
+            ->take(3)
+            ->values();
 
         $stats = [];
 
-        foreach ($users as $index => $userData) {
+        foreach ($usersData as $index => $userData) {
             $emoji = match ($index) {
                 0 => '🏆',
                 1 => '🥈',
@@ -49,10 +29,21 @@ class UserProductivityWidget extends BaseWidget
                 default => '👤',
             };
 
-            $stats[] = Stat::make($emoji.' '.$userData['name'], $userData['total_tasks'].' '.__('Tasks'))
-                ->description(__('Completed').': '.$userData['completed'].' ('.$userData['completion_rate'].'%) | '.__('In Progress').': '.$userData['in_progress'])
+            $stats[] = Stat::make(
+                $emoji.' '.$userData['user']->name,
+                $userData['total_tasks'].' '.__('Tasks')
+            )
+                ->description(
+                    __('Completed').': '.$userData['completed'].' ('.
+                    $userData['completion_rate'].'%) | '.
+                    __('In Progress').': '.$userData['in_progress']
+                )
                 ->descriptionIcon('heroicon-o-user')
-                ->color($userData['completion_rate'] >= 70 ? 'success' : ($userData['completion_rate'] >= 40 ? 'warning' : 'danger'));
+                ->color(
+                    $userData['completion_rate'] >= 70
+                        ? 'success'
+                        : ($userData['completion_rate'] >= 40 ? 'warning' : 'danger')
+                );
         }
 
         return $stats;

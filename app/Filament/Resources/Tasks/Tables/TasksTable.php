@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Tasks\Tables;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -31,44 +33,22 @@ class TasksTable
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'gray',
-                        'in_progress' => 'warning',
-                        'done' => 'success',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => __('Pending'),
-                        'in_progress' => __('In Progress'),
-                        'done' => __('Done'),
-                    })
+                    ->color(fn ($state) => $state->color())
+                    ->formatStateUsing(fn ($state) => $state->label())
                     ->sortable(),
 
                 TextColumn::make('priority')
                     ->label(__('Priority'))
                     ->badge()
-                    ->color(fn (int $state): string => match ($state) {
-                        1 => 'gray',
-                        2 => 'info',
-                        3 => 'warning',
-                        4 => 'danger',
-                        5 => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (int $state): string => match ($state) {
-                        1 => __('Low'),
-                        2 => __('Medium'),
-                        3 => __('High'),
-                        4 => __('Urgent'),
-                        5 => __('Critical'),
-                        default => (string) $state,
-                    })
+                    ->color(fn ($state) => $state->color())
+                    ->formatStateUsing(fn ($state) => $state->label())
                     ->sortable(),
 
                 TextColumn::make('due_date')
                     ->label(__('Due Date'))
                     ->date('d/m/Y')
                     ->sortable()
-                    ->color(fn ($record) => $record->due_date && $record->due_date->isPast() && $record->status !== 'done' ? 'danger' : null),
+                    ->color(fn ($record) => $record->isOverdue() ? 'danger' : null),
 
                 TextColumn::make('description')
                     ->label(__('Description'))
@@ -99,21 +79,11 @@ class TasksTable
 
                 SelectFilter::make('status')
                     ->label(__('Status'))
-                    ->options([
-                        'pending' => __('Pending'),
-                        'in_progress' => __('In Progress'),
-                        'done' => __('Done'),
-                    ]),
+                    ->options(TaskStatus::options()),
 
                 SelectFilter::make('priority')
                     ->label(__('Priority'))
-                    ->options([
-                        1 => __('Low'),
-                        2 => __('Medium'),
-                        3 => __('High'),
-                        4 => __('Urgent'),
-                        5 => __('Critical'),
-                    ]),
+                    ->options(TaskPriority::options()),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([

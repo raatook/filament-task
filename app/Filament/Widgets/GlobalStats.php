@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Project;
-use App\Models\Task;
+use App\Services\ProjectService;
+use App\Services\TaskStatisticsService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -11,22 +11,28 @@ class GlobalStats extends BaseWidget
 {
     protected function getStats(): array
     {
+        $statisticsService = app(TaskStatisticsService::class);
+        $projectService = app(ProjectService::class);
+
+        $stats = $statisticsService->getGlobalStatistics();
+        $projectCount = $projectService->getAllProjects()->count();
+
         return [
-            Stat::make('Projets actifs', Project::count())
-                ->description('Total des projets en cours')
+            Stat::make(__('Active Projects'), $projectCount)
+                ->description(__('Total projects in progress'))
                 ->descriptionIcon('heroicon-o-rectangle-stack'),
 
-            Stat::make('Tâches en cours', Task::where('status', 'in_progress')->count())
-                ->description('Tâches actuellement actives')
+            Stat::make(__('Tasks In Progress'), $stats['in_progress'])
+                ->description(__('Currently active tasks'))
                 ->descriptionIcon('heroicon-o-bolt'),
 
-            Stat::make('Urgences', Task::whereIn('priority', [4, 5])->count())
-                ->description('Tâches prioritaires')
+            Stat::make(__('Urgent Tasks'), $stats['urgent'])
+                ->description(__('Priority tasks'))
                 ->descriptionIcon('heroicon-o-exclamation-triangle')
                 ->color('danger'),
 
-            Stat::make('En retard', Task::where('due_date', '<', now())->where('status', '!=', 'done')->count())
-                ->description('Tâches dépassées')
+            Stat::make(__('Overdue Tasks'), $stats['overdue'])
+                ->description(__('Past deadline tasks'))
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('danger'),
         ];

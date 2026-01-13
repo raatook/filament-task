@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Projects\Tables;
 
+use App\Services\ProjectService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -13,6 +14,8 @@ class ProjectsTable
 {
     public static function configure(Table $table): Table
     {
+        $projectService = app(ProjectService::class);
+
         return $table
             ->columns([
                 TextColumn::make('name')
@@ -60,7 +63,7 @@ class ProjectsTable
                     ->label(__('Due Date'))
                     ->date('d/m/Y')
                     ->sortable()
-                    ->color(fn ($record) => $record->due_date && $record->due_date->isPast() ? 'danger' : null),
+                    ->color(fn ($record) => $projectService->isProjectOverdue($record) ? 'danger' : null),
 
                 TextColumn::make('created_at')
                     ->label(__('Created'))
