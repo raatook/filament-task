@@ -6,7 +6,6 @@ use App\Enums\TaskStatus;
 use App\Models\Task;
 use App\Repositories\Contracts\TaskRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 class TaskRepository implements TaskRepositoryInterface
 {
@@ -27,7 +26,7 @@ class TaskRepository implements TaskRepositoryInterface
 
     public function findByStatus(TaskStatus $status): Collection
     {
-        return Task::where('status', $status->value)->get();
+        return Task::where('status', $status)->get();
     }
 
     public function findUrgentTasks(int $limit = 10): Collection
@@ -41,7 +40,7 @@ class TaskRepository implements TaskRepositoryInterface
                             ->where('due_date', '>=', now());
                     });
             })
-            ->whereIn('status', ['pending', 'in_progress'])
+            ->whereIn('status', [TaskStatus::PENDING, TaskStatus::IN_PROGRESS])
             ->latest()
             ->limit($limit)
             ->get();
@@ -50,7 +49,7 @@ class TaskRepository implements TaskRepositoryInterface
     public function findOverdueTasks(): Collection
     {
         return Task::where('due_date', '<', now())
-            ->where('status', '!=', TaskStatus::DONE->value)
+            ->where('status', '!=', TaskStatus::DONE)
             ->get();
     }
 
@@ -83,7 +82,7 @@ class TaskRepository implements TaskRepositoryInterface
 
     public function countByStatus(TaskStatus $status): int
     {
-        return Task::where('status', $status->value)->count();
+        return Task::where('status', $status)->count();
     }
 
     public function getCompletionRate(?int $userId = null): float
@@ -100,7 +99,7 @@ class TaskRepository implements TaskRepositoryInterface
             return 0;
         }
 
-        $completedTasks = (clone $query)->where('status', TaskStatus::DONE->value)->count();
+        $completedTasks = (clone $query)->where('status', TaskStatus::DONE)->count();
 
         return round(($completedTasks / $totalTasks) * 100, 1);
     }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TaskStatus;
+use App\Enums\UserRole;
 use App\Models\Task;
 use App\Models\User;
 use App\Repositories\Contracts\TaskRepositoryInterface;
@@ -31,31 +32,31 @@ class TaskStatisticsService
 
         return [
             'total' => $userTasks->count(),
-            'pending' => $userTasks->where('status', TaskStatus::PENDING->value)->count(),
-            'in_progress' => $userTasks->where('status', TaskStatus::IN_PROGRESS->value)->count(),
-            'done' => $userTasks->where('status', TaskStatus::DONE->value)->count(),
+            'pending' => $userTasks->where('status', TaskStatus::PENDING)->count(),
+            'in_progress' => $userTasks->where('status', TaskStatus::IN_PROGRESS)->count(),
+            'done' => $userTasks->where('status', TaskStatus::DONE)->count(),
             'completion_rate' => $this->taskRepository->getCompletionRate($userId),
             'overdue' => $userTasks->filter(function ($task) {
                 return $task->due_date
                     && $task->due_date->isPast()
-                    && $task->status !== TaskStatus::DONE->value;
+                    && $task->status !== TaskStatus::DONE;
             })->count(),
         ];
     }
 
     public function getAllUsersProductivity(): Collection
     {
-        return User::where('role', 'user')
+        return User::where('role', UserRole::USER)
             ->withCount([
                 'tasks',
                 'tasks as completed_tasks_count' => fn ($query) =>
-                    $query->where('status', TaskStatus::DONE->value),
+                    $query->where('status', TaskStatus::DONE),
                 'tasks as in_progress_tasks_count' => fn ($query) =>
-                    $query->where('status', TaskStatus::IN_PROGRESS->value),
+                    $query->where('status', TaskStatus::IN_PROGRESS),
                 'tasks as pending_tasks_count' => fn ($query) =>
-                    $query->where('status', TaskStatus::PENDING->value),
+                    $query->where('status', TaskStatus::PENDING),
                 'tasks as overdue_tasks_count' => fn ($query) =>
-                    $query->where('status', '!=', TaskStatus::DONE->value)
+                    $query->where('status', '!=', TaskStatus::DONE)
                         ->where('due_date', '<', now()),
             ])
             ->get()

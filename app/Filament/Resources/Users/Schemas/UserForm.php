@@ -16,25 +16,33 @@ class UserForm
         return $schema
             ->components([
                 Section::make(__('User Information'))
+                    ->description(__('Basic user information and credentials'))
                     ->schema([
                         TextInput::make('name')
                             ->label(__('Name'))
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->placeholder(__('Enter full name')),
 
                         TextInput::make('email')
                             ->label(__('Email'))
                             ->email()
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->placeholder(__('user@example.com')),
 
                         Select::make('role')
                             ->label(__('Role'))
-                            ->options(UserRole::options())
+                            ->options(fn () => collect(UserRole::cases())
+                                ->mapWithKeys(fn ($role) => [$role->value => $role->getLabel()])
+                            )
                             ->required()
                             ->default(UserRole::USER->value)
-                            ->native(false),
+                            ->native(false)
+                            ->helperText(fn ($state) =>
+                                $state ? UserRole::from($state)?->getDescription() : null
+                            ),
 
                         Select::make('language')
                             ->label(__('Language'))
@@ -44,7 +52,8 @@ class UserForm
                             ])
                             ->required()
                             ->default('en')
-                            ->native(false),
+                            ->native(false)
+                            ->helperText(__('Preferred language for the interface')),
 
                         TextInput::make('password')
                             ->label(__('Password'))
@@ -53,7 +62,9 @@ class UserForm
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
                             ->maxLength(255)
-                            ->revealable(),
+                            ->revealable()
+                            ->helperText(__('Leave blank to keep the current password'))
+                            ->placeholder(__('Enter a secure password')),
                     ])->columns(2),
             ]);
     }

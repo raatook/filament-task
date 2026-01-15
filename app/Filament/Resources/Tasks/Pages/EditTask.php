@@ -39,7 +39,13 @@ class EditTask extends EditRecord
     {
         if (! auth()->user()->isAdmin()) {
             $updateStatusAction = app(UpdateTaskStatusAction::class);
-            $status = is_string($data['status']) ? TaskStatus::from($data['status']) : $data['status'];
+
+            $status = $data['status'];
+
+            if (!$status instanceof TaskStatus) {
+                $status = TaskStatus::from($data['status']);
+            }
+
             $updateStatusAction->execute($record->id, $status);
         } else {
             // Pour les admins, mise à jour complète

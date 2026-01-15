@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -21,7 +22,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function findByRole(UserRole $role): Collection
     {
-        return User::where('role', $role->value)->get();
+        return User::where('role', $role)->get();
     }
 
     public function findAll(): Collection
@@ -58,22 +59,22 @@ class UserRepository implements UserRepositoryInterface
 
     public function countByRole(UserRole $role): int
     {
-        return User::where('role', $role->value)->count();
+        return User::where('role', $role)->count();
     }
 
     public function getUsersWithTaskStatistics(): Collection
     {
-        return User::where('role', UserRole::USER->value)
+        return User::where('role', UserRole::USER)
             ->withCount([
                 'tasks',
                 'tasks as completed_tasks_count' => fn($query) =>
-                    $query->where('status', 'done'),
+                    $query->where('status', TaskStatus::DONE),
                 'tasks as in_progress_tasks_count' => fn($query) =>
-                    $query->where('status', 'in_progress'),
+                    $query->where('status', TaskStatus::IN_PROGRESS),
                 'tasks as pending_tasks_count' => fn($query) =>
-                    $query->where('status', 'pending'),
+                    $query->where('status', TaskStatus::PENDING),
                 'tasks as overdue_tasks_count' => fn($query) =>
-                    $query->where('status', '!=', 'done')
+                    $query->where('status', '!=', TaskStatus::DONE)
                         ->where('due_date', '<', now()),
             ])
             ->get();

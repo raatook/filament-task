@@ -19,7 +19,9 @@ class UserData
         return new self(
             name: $data['name'],
             email: $data['email'],
-            role: UserRole::from($data['role'] ?? UserRole::USER->value),
+            role: isset($data['role'])
+                ? (is_string($data['role']) ? UserRole::from($data['role']) : $data['role'])
+                : UserRole::USER,
             language: $data['language'] ?? 'en',
             password: $data['password'] ?? null
         );

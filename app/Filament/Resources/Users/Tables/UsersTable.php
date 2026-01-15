@@ -22,20 +22,22 @@ class UsersTable
                     ->label(__('Name'))
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->icon('heroicon-o-user'),
 
                 TextColumn::make('email')
                     ->label(__('Email'))
                     ->searchable()
                     ->sortable()
-                    ->icon('heroicon-o-envelope'),
+                    ->icon('heroicon-o-envelope')
+                    ->copyable()
+                    ->copyMessage(__('Email copied to clipboard')),
 
                 TextColumn::make('role')
                     ->label(__('Role'))
                     ->badge()
-                    ->color(fn ($state) => $state->color())
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip(fn ($record) => $record->role->getDescription()),
 
                 TextColumn::make('language')
                     ->label(__('Language'))
@@ -45,30 +47,37 @@ class UsersTable
                         'fr' => __('French'),
                         default => $state,
                     })
+                    ->color('info')
                     ->sortable(),
 
                 TextColumn::make('assigned_projects_count')
                     ->label(__('Projects'))
                     ->counts('assignedProjects')
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->icon('heroicon-o-briefcase'),
 
                 TextColumn::make('tasks_count')
                     ->counts('tasks')
                     ->label(__('Tasks'))
                     ->badge()
-                    ->color('warning'),
+                    ->color('warning')
+                    ->icon('heroicon-o-clipboard-document-list'),
 
                 TextColumn::make('created_at')
                     ->label(__('Created'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
+                    ->since()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('role')
                     ->label(__('Role'))
-                    ->options(UserRole::options()),
+                    ->options(fn () => collect(UserRole::cases())
+                        ->mapWithKeys(fn ($role) => [$role->value => $role->getLabel()])
+                    ),
+
                 SelectFilter::make('language')
                     ->label(__('Language'))
                     ->options([

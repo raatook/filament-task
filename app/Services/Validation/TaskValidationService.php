@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\ValidationException;
 
 class TaskValidationService
@@ -17,8 +18,8 @@ class TaskValidationService
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['required', Rule::in(array_column(TaskStatus::cases(), 'value'))],
-            'priority' => ['required', Rule::in(array_column(TaskPriority::cases(), 'value'))],
+            'status' => ['required', new Enum(TaskStatus::class)],
+            'priority' => ['required', new Enum(TaskPriority::class)],
             'due_date' => ['nullable', 'date', 'after_or_equal:today'],
         ]);
 
@@ -32,7 +33,7 @@ class TaskValidationService
     public function validateStatusUpdate(array $data): array
     {
         $validator = Validator::make($data, [
-            'status' => ['required', Rule::in(array_column(TaskStatus::cases(), 'value'))],
+            'status' => ['required', new Enum(TaskStatus::class)],
         ]);
 
         if ($validator->fails()) {
@@ -50,5 +51,16 @@ class TaskValidationService
     public function canUserDeleteTask(bool $isAdmin): bool
     {
         return $isAdmin;
+    }
+
+    public function isValidStatusTransition(TaskStatus $currentStatus, TaskStatus $newStatus): bool
+    {
+        $allowedTransitions = $currentStatus->getNextStatuses();
+
+        if (empty($allowedTransitions)) {
+            return $currentStatus === $newStatus;
+        }
+
+        return in_array($newStatus, $allowedTransitions, true);
     }
 }

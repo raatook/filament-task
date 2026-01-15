@@ -44,7 +44,7 @@ class TaskService
     public function updateTaskStatus(int $taskId, TaskStatus $status): bool
     {
         return $this->taskRepository->update($taskId, [
-            'status' => $status->value
+            'status' => $status
         ]);
     }
 
@@ -87,6 +87,6 @@ class TaskService
     {
         return $task->due_date
             && $task->due_date->isPast()
-            && $task->status !== TaskStatus::DONE->value;
+            && $task->status !== TaskStatus::DONE;
     }
 }

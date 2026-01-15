@@ -74,8 +74,8 @@ class Task extends Model
     public function scopeUrgent(Builder $query): Builder
     {
         return $query->whereIn('priority', [
-            TaskPriority::URGENT->value,
-            TaskPriority::CRITICAL->value
+            TaskPriority::URGENT,
+            TaskPriority::CRITICAL
         ]);
     }
 

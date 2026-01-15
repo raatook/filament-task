@@ -2,7 +2,11 @@
 
 namespace App\Enums;
 
-enum TaskPriority: int
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
+
+enum TaskPriority: int implements HasLabel, HasColor, HasIcon
 {
     case LOW = 1;
     case MEDIUM = 2;
@@ -10,7 +14,7 @@ enum TaskPriority: int
     case URGENT = 4;
     case CRITICAL = 5;
 
-    public function label(): string
+    public function getLabel(): ?string
     {
         return match ($this) {
             self::LOW => __('Low'),
@@ -21,35 +25,59 @@ enum TaskPriority: int
         };
     }
 
-    public function color(): string
+    public function getColor(): string | array | null
     {
         return match ($this) {
-            self::LOW, self::MEDIUM => 'gray',
+            self::LOW => 'gray',
+            self::MEDIUM => 'info',
             self::HIGH => 'warning',
-            self::URGENT, self::CRITICAL => 'danger',
+            self::URGENT => 'danger',
+            self::CRITICAL => 'danger',
         };
     }
 
-    public function icon(): string
+    public function getIcon(): ?string
     {
         return match ($this) {
-            self::URGENT, self::CRITICAL => 'heroicon-o-arrow-up',
-            self::HIGH => 'heroicon-o-minus',
-            self::LOW, self::MEDIUM => 'heroicon-o-arrow-down',
+            self::LOW => 'heroicon-o-arrow-down',
+            self::MEDIUM => 'heroicon-o-minus',
+            self::HIGH => 'heroicon-o-arrow-up',
+            self::URGENT => 'heroicon-o-exclamation-circle',
+            self::CRITICAL => 'heroicon-o-exclamation-triangle',
         };
     }
+
+    public function getDescription(): ?string
+    {
+        return match ($this) {
+            self::LOW => __('Can be done when time permits'),
+            self::MEDIUM => __('Normal priority task'),
+            self::HIGH => __('Should be done soon'),
+            self::URGENT => __('Needs immediate attention'),
+            self::CRITICAL => __('Critical issue requiring immediate action'),
+        };
+    }
+
 
     public function isUrgent(): bool
     {
         return in_array($this, [self::URGENT, self::CRITICAL]);
     }
 
-    public static function options(): array
+
+    public function isLow(): bool
     {
-        return collect(self::cases())
-            ->mapWithKeys(fn ($priority) => [
-                $priority->value => $priority->value . ' - ' . $priority->label()
-            ])
-            ->toArray();
+        return in_array($this, [self::LOW, self::MEDIUM]);
+    }
+
+
+    public function getWeight(): int
+    {
+        return $this->value;
+    }
+
+    public function isHigherThan(TaskPriority $other): bool
+    {
+        return $this->value > $other->value;
     }
 }

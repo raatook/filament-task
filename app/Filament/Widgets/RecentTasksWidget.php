@@ -26,14 +26,14 @@ class RecentTasksWidget extends BaseWidget
             ->query(
                 Task::query()
                     ->where(function ($query) {
-                        $query->whereIn('priority', [4, 5])
+                        $query->whereIn('priority', [TaskPriority::URGENT, TaskPriority::CRITICAL])
                             ->orWhere(function ($q) {
                                 $q->whereNotNull('due_date')
                                     ->where('due_date', '<=', now()->addDays(3))
                                     ->where('due_date', '>=', now());
                             });
                     })
-                    ->whereIn('status', ['pending', 'in_progress'])
+                    ->whereIn('status', [TaskStatus::PENDING, TaskStatus::IN_PROGRESS])
                     ->latest()
                     ->limit(10)
             )
@@ -56,22 +56,21 @@ class RecentTasksWidget extends BaseWidget
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->color(fn ($state) => $state->color()),
+                    ->sortable()
+                    ->tooltip(fn ($record) => $record->status->getDescription()),
 
                 TextColumn::make('priority')
                     ->label(__('Priority'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->color(fn ($state) => $state->color())
-                    ->icon(fn ($state) => $state->icon()),
+                    ->sortable()
+                    ->tooltip(fn ($record) => $record->priority->getDescription()),
 
                 TextColumn::make('due_date')
                     ->label(__('Due Date'))
-                    ->date()
+                    ->date('d/m/Y')
                     ->sortable()
                     ->color(fn ($record) => $record->isOverdue() ? 'danger' : 'gray')
-                    ->icon(fn ($record) => $record->isOverdue() ? 'heroicon-o-exclamation-triangle' : null)
+                    ->icon(fn ($record) => $record->isOverdue() ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-calendar')
                     ->description(fn ($record) => $record->due_date ? $record->due_date->diffForHumans() : null),
 
                 TextColumn::make('user.name')

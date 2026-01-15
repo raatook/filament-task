@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\TaskStatus;
+use App\Enums\UserRole;
 use App\Models\User;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,7 +23,7 @@ class AllUsersActivityTable extends BaseWidget
         return $table
             ->query(
                 User::query()
-                    ->where('role', 'user')
+                    ->where('role', UserRole::USER)
                     ->withCount([
                         'tasks',
                         'tasks as completed_tasks_count' => fn ($query) =>
@@ -59,30 +60,34 @@ class AllUsersActivityTable extends BaseWidget
                 TextColumn::make('completed_tasks_count')
                     ->label(__('Completed'))
                     ->badge()
-                    ->color('success')
+                    ->color(fn () => TaskStatus::DONE->getColor())
                     ->sortable()
-                    ->icon('heroicon-o-check-circle'),
+                    ->icon(fn () => TaskStatus::DONE->getIcon()),
 
                 TextColumn::make('in_progress_tasks_count')
                     ->label(__('In Progress'))
                     ->badge()
-                    ->color('warning')
+                    ->color(fn () => TaskStatus::IN_PROGRESS->getColor())
                     ->sortable()
-                    ->icon('heroicon-o-arrow-path'),
+                    ->icon(fn () => TaskStatus::IN_PROGRESS->getIcon()),
 
                 TextColumn::make('pending_tasks_count')
                     ->label(__('Pending'))
                     ->badge()
-                    ->color('gray')
+                    ->color(fn () => TaskStatus::PENDING->getColor())
                     ->sortable()
-                    ->icon('heroicon-o-clock'),
+                    ->icon(fn () => TaskStatus::PENDING->getIcon()),
 
                 TextColumn::make('overdue_tasks_count')
                     ->label(__('Overdue'))
                     ->badge()
                     ->color(fn ($record) => $record->overdue_tasks_count > 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->icon(fn ($record) => $record->overdue_tasks_count > 0 ? 'heroicon-o-exclamation-triangle' : 'heroicon-o-check'),
+                    ->icon(fn ($record) =>
+                        $record->overdue_tasks_count > 0
+                            ? 'heroicon-o-exclamation-triangle'
+                            : 'heroicon-o-check'
+                    ),
 
                 TextColumn::make('completion_rate')
                     ->label(__('Completion Rate'))
@@ -106,7 +111,8 @@ class AllUsersActivityTable extends BaseWidget
                         return $query->orderByRaw(
                             "CASE WHEN tasks_count = 0 THEN 0 ELSE (completed_tasks_count / tasks_count * 100) END {$direction}"
                         );
-                    }),
+                    })
+                    ->icon('heroicon-o-chart-bar'),
             ])
             ->defaultSort('tasks_count', 'desc')
             ->emptyStateHeading(__('No users found'))

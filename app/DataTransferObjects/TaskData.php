@@ -25,8 +25,12 @@ class TaskData
             userId: $data['user_id'],
             title: $data['title'],
             description: $data['description'] ?? null,
-            status: TaskStatus::from($data['status'] ?? TaskStatus::PENDING->value),
-            priority: TaskPriority::from($data['priority'] ?? TaskPriority::LOW->value),
+            status: isset($data['status'])
+                ? (is_string($data['status']) ? TaskStatus::from($data['status']) : $data['status'])
+                : TaskStatus::PENDING,
+            priority: isset($data['priority'])
+                ? (is_int($data['priority']) ? TaskPriority::from($data['priority']) : $data['priority'])
+                : TaskPriority::LOW,
             dueDate: isset($data['due_date']) ? Carbon::parse($data['due_date']) : null
         );
     }

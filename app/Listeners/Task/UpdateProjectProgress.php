@@ -16,8 +16,9 @@ class UpdateProjectProgress
             $project = $event->task->project;
 
             $project->tasks()
-                ->where('status', '!=', TaskStatus::DONE->value)
-                ->count() === 0;
+                ->where('status', '!=', TaskStatus::DONE)
+                ->exists();
+            //
         }
     }
 }

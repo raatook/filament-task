@@ -59,23 +59,32 @@ class TaskForm
 
                 Select::make('status')
                     ->label(__('Status'))
-                    ->options(TaskStatus::options())
+                    ->options(fn () => collect(TaskStatus::cases())
+                        ->mapWithKeys(fn ($status) => [$status->value => $status->getLabel()])
+                    )
                     ->default(TaskStatus::PENDING->value)
                     ->required()
                     ->native(false),
 
                 Select::make('priority')
                     ->label(__('Priority'))
-                    ->options(TaskPriority::options())
+                    ->options(fn () => collect(TaskPriority::cases())
+                        ->mapWithKeys(fn ($priority) => [$priority->value => $priority->getLabel()])
+                    )
                     ->default(TaskPriority::LOW->value)
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->helperText(fn ($state) =>
+                        $state ? TaskPriority::from($state)?->getDescription() : null
+                    ),
 
                 DatePicker::make('due_date')
                     ->label(__('Due Date'))
                     ->native(false)
                     ->displayFormat('d/m/Y')
-                    ->placeholder(__('Select due date')),
+                    ->placeholder(__('Select due date'))
+                    ->minDate(today())
+                    ->helperText(__('Tasks with due dates within 3 days will be marked as urgent')),
             ]);
     }
 }

@@ -22,38 +22,57 @@ class TasksTable
                     ->label(__('Title'))
                     ->searchable()
                     ->sortable()
-                    ->limit(50),
+                    ->limit(50)
+                    ->weight('bold'),
 
                 TextColumn::make('project.name')
                     ->label(__('Project'))
                     ->searchable()
                     ->sortable()
-                    ->limit(30),
+                    ->limit(30)
+                    ->badge()
+                    ->color('info'),
+
+                TextColumn::make('user.name')
+                    ->label(__('Assigned To'))
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable()
+                    ->icon('heroicon-o-user'),
 
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn ($state) => $state->color())
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip(fn ($record) => $record->status->getDescription()),
 
                 TextColumn::make('priority')
                     ->label(__('Priority'))
                     ->badge()
-                    ->color(fn ($state) => $state->color())
-                    ->formatStateUsing(fn ($state) => $state->label())
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip(fn ($record) => $record->priority->getDescription()),
 
                 TextColumn::make('due_date')
                     ->label(__('Due Date'))
                     ->date('d/m/Y')
                     ->sortable()
-                    ->color(fn ($record) => $record->isOverdue() ? 'danger' : null),
+                    ->color(fn ($record) => $record->isOverdue() ? 'danger' : null)
+                    ->icon(fn ($record) =>
+                        $record->isOverdue()
+                            ? 'heroicon-o-exclamation-triangle'
+                            : 'heroicon-o-calendar'
+                    )
+                    ->tooltip(fn ($record) =>
+                        $record->isOverdue()
+                            ? __('This task is overdue!')
+                            : null
+                    ),
 
                 TextColumn::make('description')
                     ->label(__('Description'))
                     ->limit(50)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->wrap(),
 
                 TextColumn::make('created_at')
                     ->label(__('Created'))
@@ -65,6 +84,7 @@ class TasksTable
                     ->label(__('Updated'))
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
+                    ->since()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -75,15 +95,21 @@ class TasksTable
 
                 SelectFilter::make('project_id')
                     ->label(__('Project'))
-                    ->relationship('project', 'name'),
+                    ->relationship('project', 'name')
+                    ->preload()
+                    ->searchable(),
 
                 SelectFilter::make('status')
                     ->label(__('Status'))
-                    ->options(TaskStatus::options()),
+                    ->options(fn () => collect(TaskStatus::cases())
+                        ->mapWithKeys(fn ($status) => [$status->value => $status->getLabel()])
+                    ),
 
                 SelectFilter::make('priority')
                     ->label(__('Priority'))
-                    ->options(TaskPriority::options()),
+                    ->options(fn () => collect(TaskPriority::cases())
+                        ->mapWithKeys(fn ($priority) => [$priority->value => $priority->getLabel()])
+                    ),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
